@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Library</title>
+<style>
+/* ===== ROOT & RESET ===== */
+:root {
+  --primary: #6c5ce7;
+  --primary-light: #a29bfe;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --text: #2d3436;
+  --text-light: #636e72;
+  --border: #dfe6e9;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+header {
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: #fff;
+  padding: 2.5rem 2rem 4rem;
+  text-align: center;
+}
+header h1 { font-size: 2.2rem; font-weight: 700; }
+header h1 span { font-size: 2.5rem; }
+header p  { opacity: .9; margin-top: .4rem; font-size: 1.05rem; }
+
+/* ===== CONTAINER ===== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ===== FILTER BAR ===== */
+.filters {
+  background: var(--card);
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: -2rem auto 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  align-items: center;
+}
+.filters input, .filters select {
+  padding: .55rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: .88rem;
+  background: #fff;
+  outline: none;
+  transition: border-color .2s;
+  color: var(--text);
+}
+.filters input:focus, .filters select:focus { border-color: var(--primary); }
+.search-box {
+  flex: 1; min-width: 220px;
+  position: relative;
+}
+.search-box input { width: 100%; padding-left: 2.2rem; }
+.search-box::before {
+  content: '🔍';
+  position: absolute; left: .7rem; top: 50%;
+  transform: translateY(-50%); font-size: .85rem;
+  pointer-events: none;
+}
+.year-group {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .85rem; color: var(--text-light);
+}
+.year-group input { width: 80px; text-align: center; }
+.filter-label {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+/* ===== CARDS GRID ===== */
+#cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  min-height: 200px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.12);
+}
+.card-badge {
+  display: inline-block;
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #fff;
+  margin-bottom: .7rem;
+  align-self: flex-start;
+}
+.card-title {
+  font-size: 1.05rem; font-weight: 600;
+  margin-bottom: .3rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card-artist {
+  color: var(--text-light);
+  font-size: .88rem;
+  margin-bottom: .8rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: .78rem;
+  color: var(--text-light);
+  border-top: 1px solid var(--border);
+  padding-top: .7rem;
+  margin-top: auto;
+}
+
+/* genre colors */
+.g-pop       { background: #ff6b6b; }
+.g-rock      { background: #ffa502; }
+.g-hiphop    { background: #26de81; }
+.g-country   { background: #45aaf2; }
+.g-jazz      { background: #fd9644; }
+.g-blues     { background: #4b7bec; }
+.g-reggae    { background: #2bcbba; }
+.g-default   { background: #a29bfe; }
+
+/* ===== PAGINATION ===== */
+.pagination {
+  display: flex; justify-content: center; align-items: center;
+  gap: 1.2rem; padding: 1.5rem 0 3rem;
+}
+.pagination button {
+  padding: .55rem 1.3rem;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .88rem;
+  font-weight: 600;
+  transition: opacity .2s;
+}
+.pagination button:disabled { opacity: .35; cursor: not-allowed; }
+.pagination button:hover:not(:disabled) { opacity: .85; }
+.page-info { text-align: center; line-height: 1.5; }
+.page-num  { font-weight: 700; font-size: .95rem; }
+.total-info { font-size: .82rem; color: var(--text-light); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  display: none; justify-content: center; align-items: center;
+  z-index: 1000; padding: 1.5rem;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  max-width: 700px; width: 100%;
+  max-height: 88vh; overflow-y: auto;
+  padding: 2rem; position: relative;
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.modal-close {
+  position: absolute; top: .8rem; right: .8rem;
+  background: none; border: none;
+  font-size: 1.4rem; cursor: pointer;
+  color: var(--text-light);
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  transition: background .2s;
+}
+.modal-close:hover { background: var(--bg); }
+.modal h2 { font-size: 1.4rem; margin-bottom: .4rem; padding-right: 2.5rem; }
+.detail-meta { color: var(--text-light); margin-bottom: 1.5rem; font-size: .92rem; }
+.detail-meta .genre-tag {
+  display: inline-block; padding: .12rem .5rem;
+  border-radius: 12px; font-size: .78rem; color: #fff;
+}
+
+/* audio features */
+.audio-features { margin-bottom: 1.5rem; }
+.audio-features h3,
+.lyrics-section h3 { font-size: .95rem; margin-bottom: .8rem; font-weight: 600; }
+.progress-row {
+  display: flex; align-items: center; gap: .8rem;
+  margin-bottom: .6rem;
+}
+.progress-label { width: 120px; font-size: .82rem; color: var(--text-light); }
+.progress-track {
+  flex: 1; height: 10px;
+  background: var(--bg); border-radius: 5px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  border-radius: 5px;
+  transition: width .6s ease;
+}
+.progress-value { width: 42px; text-align: right; font-size: .82rem; font-weight: 700; }
+.extra-stats {
+  display: flex; gap: 1.5rem; margin-top: .6rem;
+  font-size: .82rem; color: var(--text-light);
+}
+.extra-stats span strong { color: var(--text); }
+
+/* lyrics */
+.lyrics-box {
+  background: var(--bg); border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+  max-height: 280px; overflow-y: auto;
+  font-size: .88rem; line-height: 1.9;
+  white-space: pre-wrap; word-wrap: break-word;
+}
+
+/* ===== LOADING & EMPTY ===== */
+.loading, .empty, .error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+}
+.spinner {
+  width: 42px; height: 42px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { color: var(--text-light); font-size: 1.1rem; }
+.error { color: #d63031; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  header { padding: 1.8rem 1rem 3.5rem; }
+  header h1 { font-size: 1.6rem; }
+  .filters { flex-direction: column; }
+  .search-box { min-width: 100%; }
+  #cards { grid-template-columns: 1fr; }
+  .modal { padding: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header>
+  <h1><span>🎵</span> Music Library</h1>
+  <p>Jelajahi 28.000+ lagu dari 1950 hingga 2019</p>
+</header>
+
+<!-- ========== MAIN ========== -->
+<div class="container">
+
+  <!-- FILTER BAR -->
+  <div class="filters">
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Cari judul atau artis…">
+    </div>
+    <select id="genre"><option value="">Semua Genre</option></select>
+    <select id="topic"><option value="">Semua Topic</option></select>
+    <div class="year-group">
+      <input type="number" id="yearFrom" placeholder="Dari">
+      <span>–</span>
+      <input type="number" id="yearTo" placeholder="Sampai">
+    </div>
+    <select id="sort">
+      <option value="title">Judul A-Z</option>
+      <option value="newest">Terbaru</option>
+      <option value="oldest">Terlama</option>
+      <option value="energy">Energy ↓</option>
+      <option value="danceability">Danceability ↓</option>
+    </select>
+  </div>
+
+  <!-- CARDS -->
+  <div id="cards">
+    <div class="loading"><div class="spinner"></div><p>Memuat data…</p></div>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="pagination">
+    <button id="prevBtn" disabled>◀ Prev</button>
+    <div class="page-info">
+      <div class="page-num" id="pageInfo">Halaman 1</div>
+      <div class="total-info" id="totalInfo"></div>
+    </div>
+    <button id="nextBtn" disabled>Next ▶</button>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ========== DETAIL MODAL ========== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+/* ---------- CONFIG ---------- */
+const API = "http://38.103.170.138:5000/api";
+const LIMIT = 20;
+
+let currentPage = 1;
+let totalPages  = 1;
+let debounceTimer = null;
+
+/* ---------- GENRE COLOR MAP ---------- */
+function genreClass(g) {
+  if (!g) return "g-default";
+  const map = { pop:"g-pop", rock:"g-rock", "hip hop":"g-hiphop",
+                country:"g-country", jazz:"g-jazz", blues:"g-blues", reggae:"g-reggae" };
+  return map[g.toLowerCase()] || "g-default";
+}
+
+/* ---------- ESCAPE HTML ---------- */
+function esc(str) {
+  if (!str) return "";
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ---------- INIT ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadFilters();
+  attachListeners();
+  loadTracks();
+});
+
+/* ---------- LOAD FILTER OPTIONS ---------- */
+async function loadFilters() {
+  try {
+    const res  = await fetch(API + "/filters");
+    const data = await res.json();
+    populate("genre", data.genres);
+    populate("topic", data.topics);
+    document.getElementById("yearFrom").placeholder = data.year_min;
+    document.getElementById("yearTo").placeholder   = data.year_max;
+    document.getElementById("yearFrom").min = data.year_min;
+    document.getElementById("yearFrom").max = data.year_max;
+    document.getElementById("yearTo").min   = data.year_min;
+    document.getElementById("yearTo").max   = data.year_max;
+  } catch (e) {
+    console.error("Gagal memuat filter:", e);
+  }
+}
+
+function populate(id, items) {
+  const sel = document.getElementById(id);
+  items.forEach(v => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+    sel.appendChild(o);
+  });
+}
+
+/* ---------- EVENT LISTENERS ---------- */
+function attachListeners() {
+  // search dengan debounce 300ms
+  document.getElementById("search").addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => { currentPage = 1; loadTracks(); }, 300);
+  });
+
+  // dropdown & year langsung trigger
+  ["genre","topic","sort"].forEach(id =>
+    document.getElementById(id).addEventListener("change", () => { currentPage = 1; loadTracks(); })
+  );
+  ["yearFrom","yearTo"].forEach(id =>
+    document.getElementById(id).addEventListener("change", () => { currentPage = 1; loadTracks(); })
+  );
+
+  // pagination
+  document.getElementById("prevBtn").addEventListener("click", () => {
+    if (currentPage > 1) { currentPage--; loadTracks(); }
+  });
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    if (currentPage < totalPages) { currentPage++; loadTracks(); }
+  });
+
+  // close modal
+  document.getElementById("modalOverlay").addEventListener("click", e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+}
+
+/* ---------- LOAD TRACKS ---------- */
+async function loadTracks() {
+  const container = document.getElementById("cards");
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Memuat data…</p></div>';
+
+  const p = new URLSearchParams();
+  p.set("page", currentPage);
+  p.set("limit", LIMIT);
+
+  const q = document.getElementById("search").value.trim();
+  if (q) p.set("q", q);
+
+  const genre = document.getElementById("genre").value;
+  if (genre) p.set("genre", genre);
+
+  const topic = document.getElementById("topic").value;
+  if (topic) p.set("topic", topic);
+
+  const yf = document.getElementById("yearFrom").value;
+  if (yf) p.set("year_from", yf);
+
+  const yt = document.getElementById("yearTo").value;
+  if (yt) p.set("year_to", yt);
+
+  const sort = document.getElementById("sort").value;
+  if (sort) p.set("sort", sort);
+
+  try {
+    const res  = await fetch(API + "/tracks?" + p.toString());
+    const data = await res.json();
+
+    totalPages = Math.max(1, Math.ceil(data.total / data.limit));
+
+    if (data.data.length === 0) {
+      container.innerHTML = '<div class="empty">🎵 Tidak ada hasil ditemukan</div>';
+    } else {
+      container.innerHTML = data.data.map(cardHTML).join("");
+      container.querySelectorAll(".card").forEach(c =>
+        c.addEventListener("click", () => showDetail(c.dataset.id))
+      );
+    }
+
+    updatePagination(data);
+  } catch (e) {
+    container.innerHTML = '<div class="error">❌ Gagal memuat data. Pastikan backend berjalan.</div>';
+    console.error(e);
+  }
+}
+
+function cardHTML(t) {
+  return `
+    <div class="card" data-id="${t.id}">
+      <span class="card-badge ${genreClass(t.genre)}">${esc(t.genre) || "-"}</span>
+      <div class="card-title" title="${esc(t.track_name)}">${esc(t.track_name)}</div>
+      <div class="card-artist">${esc(t.artist)}</div>
+      <div class="card-footer">
+        <span>📅 ${t.year || "-"}</span>
+        <span>💬 ${esc(t.topic) || "-"}</span>
+      </div>
+    </div>`;
+}
+
+function updatePagination(data) {
+  document.getElementById("prevBtn").disabled = currentPage <= 1;
+  document.getElementById("nextBtn").disabled = currentPage >= totalPages;
+  document.getElementById("pageInfo").textContent = "Halaman " + data.page + " dari " + totalPages;
+  document.getElementById("totalInfo").textContent = data.total.toLocaleString("id-ID") + " lagu ditemukan";
+}
+
+/* ---------- DETAIL MODAL ---------- */
+async function showDetail(id) {
+  const overlay = document.getElementById("modalOverlay");
+  const content = document.getElementById("modalContent");
+  overlay.classList.add("active");
+  content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Memuat detail…</p></div>';
+
+  try {
+    const res = await fetch(API + "/tracks/" + id);
+    if (!res.ok) throw new Error("Not found");
+    const t = await res.json();
+
+    content.innerHTML = `
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2>${esc(t.track_name)}</h2>
+      <p class="detail-meta">
+        ${esc(t.artist)} &bull; ${t.year}
+        &bull; <span class="genre-tag ${genreClass(t.genre)}">${esc(t.genre)}</span>
+        &bull; ${esc(t.topic)}
+      </p>
+
+      <div class="audio-features">
+        <h3>🎚️ Audio Features</h3>
+        ${bar("Danceability", t.danceability)}
+        ${bar("Energy", t.energy)}
+        ${bar("Valence", t.valence)}
+        ${bar("Acousticness", t.acousticness)}
+        <div class="extra-stats">
+          <span>Instrumentalness: <strong>${fmt(t.instrumentalness)}</strong></span>
+          <span>Loudness: <strong>${fmtLoud(t.loudness)} dB</strong></span>
+        </div>
+      </div>
+
+      <div class="lyrics-section">
+        <h3>📝 Lyrics</h3>
+        <div class="lyrics-box" id="lyricsBox"></div>
+      </div>`;
+
+    // isi lyrics via textContent agar aman dari XSS
+    document.getElementById("lyricsBox").textContent = t.lyrics || "Tidak tersedia";
+  } catch (e) {
+    content.innerHTML = '<button class="modal-close" onclick="closeModal()">✕</button><div class="error">Gagal memuat detail lagu.</div>';
+    console.error(e);
+  }
+}
+
+function bar(label, val) {
+  const pct = ((val ?? 0) * 100).toFixed(0);
+  return `
+    <div class="progress-row">
+      <span class="progress-label">${label}</span>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <span class="progress-value">${(val ?? 0).toFixed(2)}</span>
+    </div>`;
+}
+
+function fmt(v)     { return (v ?? 0).toFixed(4); }
+function fmtLoud(v) { return (v ?? 0).toFixed(1); }
+
+function closeModal() {
+  document.getElementById("modalOverlay").classList.remove("active");
+}
+</script>
+</body>
+</html>
